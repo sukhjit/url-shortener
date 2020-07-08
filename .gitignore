@@ -1,4 +1,5 @@
 .env
 .serverless/
+cover.out
 node_modules/
 url-shortener

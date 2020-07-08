@@ -129,7 +129,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSONHandle(w, http.StatusOK, obj)
+	responseJSONHandle(w, http.StatusCreated, obj)
 }
 
 func responseJSONHandle(w http.ResponseWriter, statusCode int, payload interface{}) {
