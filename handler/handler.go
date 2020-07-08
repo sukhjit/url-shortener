@@ -12,18 +12,24 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sukhjit/url-shortener/model"
 	"github.com/sukhjit/url-shortener/repo"
+	"github.com/sukhjit/url-shortener/repo/dynamodb"
 	"github.com/sukhjit/url-shortener/repo/inmemory"
 	"github.com/sukhjit/util"
 )
 
 var (
-	errorLogger   = log.New(os.Stderr, "[ERROR] ", log.Llongfile)
-	shortenerRepo repo.Shortener
+	errURLNotFound = fmt.Errorf("URL does not exist")
+	errorLogger    = log.New(os.Stderr, "[ERROR] ", log.Llongfile)
+	shortenerDB    repo.Shortener
 )
 
 // NewHandler function create routes and return mux router
-func NewHandler() *mux.Router {
-	shortenerRepo = inmemory.NewShortener()
+func NewHandler(isLocal bool, awsRegion, dynamoDBTable string) *mux.Router {
+	if isLocal {
+		shortenerDB = inmemory.NewShortener()
+	} else {
+		shortenerDB = dynamodb.NewShortener(awsRegion, dynamoDBTable)
+	}
 
 	return buildRouter()
 }
@@ -53,15 +59,14 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	slug := vars["slug"]
 
-	resp, err := shortenerRepo.Info(slug)
+	resp, err := shortenerDB.Info(slug)
 	if err != nil {
 		responseErrorHandle(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if resp == nil {
-		errMsg := fmt.Errorf("URL does not exist")
-		responseErrorHandle(w, http.StatusNotFound, errMsg)
+	if resp == nil || resp.Slug == "" {
+		responseErrorHandle(w, http.StatusNotFound, errURLNotFound)
 		return
 	}
 
@@ -72,10 +77,15 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	slug := vars["slug"]
 
-	url, err := shortenerRepo.Load(slug)
+	url, err := shortenerDB.Load(slug)
 	if err != nil {
 		errMsg := fmt.Errorf("Unable to load from database: %v", err)
 		responseErrorHandle(w, http.StatusInternalServerError, errMsg)
+		return
+	}
+
+	if url == "" {
+		responseErrorHandle(w, http.StatusNotFound, errURLNotFound)
 		return
 	}
 
@@ -112,9 +122,9 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		URL:  url.String(),
 	}
 
-	err = shortenerRepo.Add(obj)
+	err = shortenerDB.Add(obj)
 	if err != nil {
-		errMsg := fmt.Errorf("Could not save in database: %v", err)
+		errMsg := fmt.Errorf("Could not save to database: %v", err)
 		responseErrorHandle(w, http.StatusInternalServerError, errMsg)
 		return
 	}

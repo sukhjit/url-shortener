@@ -3,7 +3,7 @@ service: urlshortener
 frameworkVersion: '>=1.28.0 <2.0.0'
 
 custom:
-    dynamoTable: urls-shortener-${self:provider.stage}
+    dynamoTable: url-shortener-${self:provider.stage}
 
 provider:
     name: aws
@@ -12,6 +12,26 @@ provider:
     region: ap-southeast-2
     memorySize: 128
     timeout: 10
+    iamManagedPolicies:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+    iamRoleStatements:
+        -
+            Effect: 'Allow'
+            Action:
+                - "dynamodb:PutItem"
+                - "dynamodb:GetItem"
+                - "dynamodb:UpdateItem"
+                - "dynamodb:DeleteItem"
+                - "dynamodb:Scan"
+            Resource:
+                - 'Fn::Join':
+                    - ':'
+                    -
+                        - 'arn:aws:dynamodb'
+                        - Ref: 'AWS::Region'
+                        - Ref: 'AWS::AccountId'
+                        - 'table/${self:custom.dynamoTable}'
+
 
 package:
     exclude:
@@ -22,6 +42,8 @@ package:
 functions:
     app:
         handler: bin/url-shortener
+        environment:
+            DYNAMO_DB_TABLE: ${self:custom.dynamoTable}
         events:
             - http: ANY /
             - http: ANY {proxy+}

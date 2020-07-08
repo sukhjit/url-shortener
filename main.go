@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	awsRegion    string
-	isLambda     bool
-	muxLambdaSvc *muxAdapter.GorillaMuxAdapter
-	router       *mux.Router
-	port         string
+	awsRegion     string
+	dynamoDBTable string
+	isLocal       bool
+	muxLambdaSvc  *muxAdapter.GorillaMuxAdapter
+	router        *mux.Router
+	port          string
 )
 
 func initEnv() {
@@ -36,23 +37,25 @@ func initEnv() {
 		awsRegion = "ap-southeast-2"
 	}
 
-	isLambda = false
-	if os.Getenv("WEB") == "" {
-		isLambda = true
+	isLocal = true
+	if os.Getenv("LOCAL") == "" {
+		isLocal = false
 	}
+
+	dynamoDBTable = os.Getenv("DYNAMO_DB_TABLE")
 }
 
 func main() {
 	initEnv()
 
-	router = handler.NewHandler()
+	router = handler.NewHandler(isLocal, awsRegion, dynamoDBTable)
 
-	if isLambda {
-		lambda.Start(lambdaHandler)
-	} else {
+	if isLocal {
 		fmt.Println("Started local server on port:", port)
 
 		http.ListenAndServe(":"+port, router)
+	} else {
+		lambda.Start(lambdaHandler)
 	}
 }
 

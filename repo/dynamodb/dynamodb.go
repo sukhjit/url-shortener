@@ -62,3 +62,35 @@ func (s *svc) Info(slug string) (*model.Shortener, error) {
 
 	return &item, nil
 }
+
+func (s *svc) Load(slug string) (string, error) {
+	obj, err := s.Info(slug)
+	if err != nil {
+		return "", err
+	}
+
+	// not found in db
+	if obj.Slug == "" {
+		return "", nil
+	}
+
+	obj.Visits++
+
+	err = s.Update(obj)
+
+	return obj.URL, err
+}
+
+func (s *svc) Update(item *model.Shortener) error {
+	av, err := dynamodbattribute.MarshalMap(item)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.PutItem(&dynamodb.PutItemInput{
+		TableName: aws.String(s.tableName),
+		Item:      av,
+	})
+
+	return err
+}
