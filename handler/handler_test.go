@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,22 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/sukhjit/url-shortener/model"
 )
+
+type MockDB struct{}
+
+func (m *MockDB) Load(slug string) (string, error) {
+	return "", fmt.Errorf("Failed to load")
+}
+
+func (m *MockDB) Add(item *model.Shortener) error {
+	return fmt.Errorf("Failed to add")
+}
+
+func (m *MockDB) Info(slug string) (*model.Shortener, error) {
+	return nil, fmt.Errorf("Failed to info")
+}
 
 func setup() {
 	_ = NewHandler(true, "", "")
@@ -130,6 +146,35 @@ func TestAddHandlerWithInvalidUrl(t *testing.T) {
 	}
 }
 
+func TestAddHandlerReturn500(t *testing.T) {
+	shortenerDB = &MockDB{}
+
+	jsonStr := []byte(`{"url":"http://www.itestit.com"}`)
+	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer(jsonStr))
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+	rec := httptest.NewRecorder()
+
+	addHandler(rec, req)
+	res := rec.Result()
+	defer res.Body.Close()
+
+	expected := http.StatusInternalServerError
+	if res.StatusCode != expected {
+		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("Could not read response: %v", err)
+	}
+	expectedStr := `,"error":"Internal server error"}`
+	if !strings.Contains(string(b), expectedStr) {
+		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
+	}
+}
+
 func TestAddHandler(t *testing.T) {
 	setup()
 
@@ -174,6 +219,34 @@ func TestGetHandlerReturn404(t *testing.T) {
 	expected := http.StatusNotFound
 	if res.StatusCode != expected {
 		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
+	}
+}
+
+func TestGetHandlerReturn500(t *testing.T) {
+	shortenerDB = &MockDB{}
+
+	req, err := http.NewRequest("GET", "/fake-val", nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+	rec := httptest.NewRecorder()
+
+	redirectHandler(rec, req)
+	res := rec.Result()
+	defer res.Body.Close()
+
+	expected := http.StatusInternalServerError
+	if res.StatusCode != expected {
+		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("Could not read response: %v", err)
+	}
+	expectedStr := `,"error":"Internal server error"}`
+	if !strings.Contains(string(b), expectedStr) {
+		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
 	}
 }
 
@@ -225,6 +298,34 @@ func TestInfoHandlerReturn404(t *testing.T) {
 	expected := http.StatusNotFound
 	if res.StatusCode != expected {
 		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
+	}
+}
+
+func TestInfoHandlerReturn500(t *testing.T) {
+	shortenerDB = &MockDB{}
+
+	req, err := http.NewRequest("GET", "/info/123", nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+	rec := httptest.NewRecorder()
+
+	infoHandler(rec, req)
+	res := rec.Result()
+	defer res.Body.Close()
+
+	expected := http.StatusInternalServerError
+	if res.StatusCode != expected {
+		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("Could not read response: %v", err)
+	}
+	expectedStr := `,"error":"Internal server error"}`
+	if !strings.Contains(string(b), expectedStr) {
+		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
 	}
 }
 
