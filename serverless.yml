@@ -1,0 +1,67 @@
+service: urlshortener
+
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+custom:
+    dynamoTable: url-shortener-${self:provider.stage}
+
+provider:
+    name: aws
+    runtime: go1.x
+    stage: prod
+    region: ap-southeast-2
+    memorySize: 128
+    timeout: 10
+    iamManagedPolicies:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+    iamRoleStatements:
+        -
+            Effect: 'Allow'
+            Action:
+                - "dynamodb:PutItem"
+                - "dynamodb:GetItem"
+                - "dynamodb:UpdateItem"
+                - "dynamodb:DeleteItem"
+                - "dynamodb:Scan"
+            Resource:
+                - 'Fn::Join':
+                    - ':'
+                    -
+                        - 'arn:aws:dynamodb'
+                        - Ref: 'AWS::Region'
+                        - Ref: 'AWS::AccountId'
+                        - 'table/${self:custom.dynamoTable}'
+
+
+package:
+    exclude:
+        - ./**
+    include:
+        - ./bin/**
+
+functions:
+    app:
+        handler: bin/url-shortener
+        environment:
+            DYNAMO_DB_TABLE: ${self:custom.dynamoTable}
+        events:
+            - http: ANY /
+            - http: ANY {proxy+}
+
+resources:
+    Resources:
+        UrlShortenerDynamoDBTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:custom.dynamoTable}
+                AttributeDefinitions:
+                    -
+                        AttributeName: slug
+                        AttributeType: S
+                KeySchema:
+                    -
+                        AttributeName: slug
+                        KeyType: HASH
+                ProvisionedThroughput:
+                    ReadCapacityUnits: 1
+                    WriteCapacityUnits: 1
