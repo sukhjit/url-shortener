@@ -129,15 +129,11 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSONHandle(w, http.StatusOK, obj)
+	responseJSONHandle(w, http.StatusCreated, obj)
 }
 
 func responseJSONHandle(w http.ResponseWriter, statusCode int, payload interface{}) {
-	result, err := json.Marshal(payload)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	result, _ := json.Marshal(payload)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

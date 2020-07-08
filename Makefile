@@ -13,5 +13,11 @@ dev:
 build:
 	env GOOS=linux go build $(LDFLAGS) -o bin/$(PROJECTNAME) main.go
 
+test:
+	go test -v ./...
+
+coverage:
+	go test -v ./... -coverprofile cover.out && go tool cover -html=cover.out
+
 deploy: clean build
 	./node_modules/.bin/sls deploy --verbose
