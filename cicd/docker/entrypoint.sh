@@ -2,11 +2,13 @@
 
 set -euo pipefail
 
-# # install compiledaemon for hot reload
-# go get github.com/githubnemo/CompileDaemon
+apt-get update
 
-# cd /app
-# CompileDaemon -build="make dev" -command="./url-shortener"
+if ! which node &> /dev/null ; then
+	echo "Installing nodejs"
+	curl -sL https://deb.nodesource.com/setup_12.x | bash -
+	apt-get install -y nodejs
+fi
 
 echo "Container is up and running..."
 tail -f /dev/null
