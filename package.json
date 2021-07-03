@@ -3,6 +3,6 @@
   "description": "Url Shortener deployed with serverless using AWS Lambda",
   "version": "0.0.1",
   "devDependencies": {
-    "serverless": "^1.74.1"
+    "serverless": "^2.50.0"
   }
 }
