@@ -8,7 +8,7 @@ run:
 	go run main.go
 
 dev:
-	env GOOS=linux go build -o $(PROJECTNAME) main.go
+	cicd/docker/local-dev.sh
 
 build:
 	env GOOS=linux go build $(LDFLAGS) -o bin/$(PROJECTNAME) main.go

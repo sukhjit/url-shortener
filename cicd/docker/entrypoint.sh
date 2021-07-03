@@ -1,10 +1,12 @@
 #!/bin/bash
 
-set -e
-set -v
+set -euo pipefail
 
-# install compiledaemon for hot reload
-go get github.com/githubnemo/CompileDaemon
+# # install compiledaemon for hot reload
+# go get github.com/githubnemo/CompileDaemon
 
-cd /app
-CompileDaemon -build="make dev" -command="./url-shortener"
+# cd /app
+# CompileDaemon -build="make dev" -command="./url-shortener"
+
+echo "Container is up and running..."
+tail -f /dev/null
