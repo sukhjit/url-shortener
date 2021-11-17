@@ -3,28 +3,29 @@ package handler
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 	"github.com/sukhjit/url-shortener/model"
 )
 
 type MockDB struct{}
 
 func (m *MockDB) Load(slug string) (string, error) {
-	return "", fmt.Errorf("Failed to load")
+	return "", fmt.Errorf("failed to load")
 }
 
 func (m *MockDB) Add(item *model.Shortener) error {
-	return fmt.Errorf("Failed to add")
+	return fmt.Errorf("failed to add")
 }
 
 func (m *MockDB) Info(slug string) (*model.Shortener, error) {
-	return nil, fmt.Errorf("Failed to info")
+	return nil, fmt.Errorf("failed to info")
 }
 
 func setup() {
@@ -33,11 +34,10 @@ func setup() {
 
 func TestStatusHandler(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "/status", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "/status", http.NoBody)
+	a.Nil(err)
 
 	rec := httptest.NewRecorder()
 
@@ -45,218 +45,165 @@ func TestStatusHandler(t *testing.T) {
 
 	res := rec.Result()
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected status: %d, got: %d", http.StatusOK, res.StatusCode)
-	}
+	a.Equal(res.StatusCode, http.StatusOK)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
 
-	expected := `{"status":"ok"}`
-	if expected != string(b) {
-		t.Errorf("Expected body: %s, got: %s", expected, b)
-	}
+	a.Equal(`{"status":"ok"}`, string(b))
 }
 
 func TestAddHandlerWithInvalidPayload(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
 	req, err := http.NewRequest("POST", "/add", strings.NewReader(""))
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	addHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusBadRequest
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusBadRequest, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `{"error":"Invalid request payload"}`
-	if expectedStr != string(b) {
-		t.Errorf("Expected body: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+
+	a.Equal(`{"error":"invalid request payload"}`, string(b))
 }
 
 func TestAddHandlerWithoutUrlParam(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
 	jsonStr := []byte(`{"urlx":"t"}`)
 	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer(jsonStr))
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	addHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusBadRequest
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusBadRequest, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `{"error":"Missing 'url' variable"}`
-	if expectedStr != string(b) {
-		t.Errorf("Expected body: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Equal(`{"error":"missing 'url' variable"}`, string(b))
 }
 
 func TestAddHandlerWithInvalidUrl(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
 	jsonStr := []byte(`{"url":"http//www.itestit.com"}`)
 	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer(jsonStr))
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	addHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusBadRequest
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusBadRequest, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `{"error":"Not valid url: http//www.itestit.com"}`
-	if expectedStr != string(b) {
-		t.Errorf("Expected body: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Equal(`{"error":"not valid url: http//www.itestit.com"}`, string(b))
 }
 
 func TestAddHandlerReturn500(t *testing.T) {
 	shortenerDB = &MockDB{}
+	a := assert.New(t)
 
 	jsonStr := []byte(`{"url":"http://www.itestit.com"}`)
 	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer(jsonStr))
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	addHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusInternalServerError
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusInternalServerError, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `,"error":"Internal server error"}`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+
+	a.Contains(string(b), `"error":"Internal server error"`)
 }
 
 func TestAddHandler(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
 	jsonStr := []byte(`{"url":"http://www.itestit.com"}`)
 	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer(jsonStr))
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	addHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusCreated {
-		t.Errorf("Expected status: %d, got: %d", http.StatusCreated, res.StatusCode)
-	}
+	a.Equal(http.StatusCreated, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `"url":"http://www.itestit.com","visits":0}`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+
+	a.Contains(string(b), `"url":"http://www.itestit.com"`)
+	a.Contains(string(b), `"visits":0`)
 }
 
 func TestGetHandlerReturn404(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "/fake-val", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "/fake-val", http.NoBody)
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	redirectHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusNotFound
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusNotFound, res.StatusCode)
 }
 
 func TestGetHandlerReturn500(t *testing.T) {
 	shortenerDB = &MockDB{}
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "/fake-val", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "/fake-val", http.NoBody)
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	redirectHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusInternalServerError
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusInternalServerError, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `,"error":"Internal server error"}`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Contains(string(b), `"error":"Internal server error"`)
 }
 
 func TestGetHandler(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "who-cares", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "who-cares", http.NoBody)
+	a.Nil(err)
+
 	req = mux.SetURLVars(req, map[string]string{
 		"slug": "go",
 	})
@@ -267,75 +214,56 @@ func TestGetHandler(t *testing.T) {
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusFound
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusFound, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `<a href="https://www.google.com">Found</a>`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Contains(string(b), `<a href="https://www.google.com">Found</a>`)
 }
 
 func TestInfoHandlerReturn404(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "/info/123", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "/info/123", http.NoBody)
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	infoHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusNotFound
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusNotFound, res.StatusCode)
 }
 
 func TestInfoHandlerReturn500(t *testing.T) {
 	shortenerDB = &MockDB{}
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "/info/123", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "/info/123", http.NoBody)
+	a.Nil(err)
+
 	rec := httptest.NewRecorder()
 
 	infoHandler(rec, req)
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusInternalServerError
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusInternalServerError, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `,"error":"Internal server error"}`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Contains(string(b), `"error":"Internal server error"`)
 }
 
 func TestInfoHandler(t *testing.T) {
 	setup()
+	a := assert.New(t)
 
-	req, err := http.NewRequest("GET", "who-cares", nil)
-	if err != nil {
-		t.Fatalf("could not create request: %v", err)
-	}
+	req, err := http.NewRequest("GET", "who-cares", http.NoBody)
+	a.Nil(err)
+
 	req = mux.SetURLVars(req, map[string]string{
 		"slug": "go",
 	})
@@ -346,17 +274,11 @@ func TestInfoHandler(t *testing.T) {
 	res := rec.Result()
 	defer res.Body.Close()
 
-	expected := http.StatusOK
-	if res.StatusCode != expected {
-		t.Errorf("Expected status: %d, got: %d", expected, res.StatusCode)
-	}
+	a.Equal(http.StatusOK, res.StatusCode)
 
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("Could not read response: %v", err)
-	}
-	expectedStr := `{"slug":"go","url":"https://www.google.com","visits":0}`
-	if !strings.Contains(string(b), expectedStr) {
-		t.Errorf("Expected body contains: %s, got: %s", expectedStr, b)
-	}
+	b, err := io.ReadAll(res.Body)
+	a.Nil(err)
+	a.Contains(string(b), `"slug":"go"`)
+	a.Contains(string(b), `"url":"https://www.google.com"`)
+	a.Contains(string(b), `"visits":0`)
 }

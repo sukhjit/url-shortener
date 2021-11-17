@@ -77,19 +77,19 @@ func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	slug := vars["slug"]
 
-	url, err := shortenerDB.Load(slug)
+	loadedURL, err := shortenerDB.Load(slug)
 	if err != nil {
-		errMsg := fmt.Errorf("Unable to load from database: %v", err)
+		errMsg := fmt.Errorf("unable to load from database: %v", err)
 		responseErrorHandle(w, http.StatusInternalServerError, errMsg)
 		return
 	}
 
-	if url == "" {
+	if loadedURL == "" {
 		responseErrorHandle(w, http.StatusNotFound, errURLNotFound)
 		return
 	}
 
-	http.Redirect(w, r, string(url), http.StatusFound)
+	http.Redirect(w, r, loadedURL, http.StatusFound)
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,32 +99,32 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&reqPayload)
 	if err != nil {
-		errMsg := fmt.Errorf("Invalid request payload")
+		errMsg := fmt.Errorf("invalid request payload")
 		responseErrorHandle(w, http.StatusBadRequest, errMsg)
 		return
 	}
 
-	if len(reqPayload.URL) == 0 {
-		errMsg := fmt.Errorf("Missing 'url' variable")
+	if reqPayload.URL == "" {
+		errMsg := fmt.Errorf("missing 'url' variable")
 		responseErrorHandle(w, http.StatusBadRequest, errMsg)
 		return
 	}
 
-	url, err := url.ParseRequestURI(reqPayload.URL)
+	parsedURL, err := url.ParseRequestURI(reqPayload.URL)
 	if err != nil {
-		errMsg := fmt.Errorf("Not valid url: %s", reqPayload.URL)
+		errMsg := fmt.Errorf("not valid url: %s", reqPayload.URL)
 		responseErrorHandle(w, http.StatusBadRequest, errMsg)
 		return
 	}
 
 	obj := &model.Shortener{
 		Slug: util.RandomString(8),
-		URL:  url.String(),
+		URL:  parsedURL.String(),
 	}
 
 	err = shortenerDB.Add(obj)
 	if err != nil {
-		errMsg := fmt.Errorf("Could not save to database: %v", err)
+		errMsg := fmt.Errorf("could not save to database: %v", err)
 		responseErrorHandle(w, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -137,6 +137,7 @@ func responseJSONHandle(w http.ResponseWriter, statusCode int, payload interface
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
+	// nolint: errcheck
 	w.Write(result)
 }
 

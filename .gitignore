@@ -1,5 +1,14 @@
-.env
-.serverless/
-cover.out
-node_modules/
-url-shortener
+# Byte-compiled / optimized / DLL files
+*.env
+/bin/
+!/bin/.gitkeep
+/api
+/main
+/node_modules
+
+# Unit test / coverage reports
+/coverage.html
+/c.out
+
+# IDE
+.vscode/

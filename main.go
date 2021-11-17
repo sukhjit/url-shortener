@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	muxAdapter "github.com/awslabs/aws-lambda-go-api-proxy/gorillamux"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -34,12 +36,11 @@ func initEnv() {
 
 	awsRegion = os.Getenv("AWS_REGION")
 	if awsRegion == "" {
-		awsRegion = "ap-southeast-2"
+		awsRegion = endpoints.ApSoutheast2RegionID
 	}
 
-	isLocal = true
-	if os.Getenv("LOCAL") == "" {
-		isLocal = false
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+		isLocal = true
 	}
 
 	dynamoDBTable = os.Getenv("DYNAMO_DB_TABLE")
@@ -53,12 +54,13 @@ func main() {
 	if isLocal {
 		fmt.Println("Started local server on port:", port)
 
-		http.ListenAndServe(":"+port, router)
+		log.Fatal(http.ListenAndServe(":"+port, router))
 	} else {
 		lambda.Start(lambdaHandler)
 	}
 }
 
+// nolint: gocritic
 func lambdaHandler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	if muxLambdaSvc == nil {
 		muxLambdaSvc = muxAdapter.New(router)

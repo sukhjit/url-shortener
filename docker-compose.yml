@@ -1,10 +1,11 @@
 version: "3.7"
 services:
     api:
-        image: golang:1.14.4-stretch
-        entrypoint: '/app/cicd/docker/entrypoint.sh'
+        image: golang:1.17-stretch
         env_file: .env
         ports:
             - 3000:3000
         volumes:
             - .:/app
+        working_dir: /app
+        entrypoint: cicd/bin/entrypoint.sh

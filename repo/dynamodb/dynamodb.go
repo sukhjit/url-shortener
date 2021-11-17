@@ -16,12 +16,12 @@ type svc struct {
 
 // NewShortener func
 func NewShortener(awsRegion, tableName string) repo.Shortener {
-	session := session.Must(session.NewSession(&aws.Config{
+	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion),
 	}))
 
 	return &svc{
-		db:        dynamodb.New(session),
+		db:        dynamodb.New(sess),
 		tableName: tableName,
 	}
 }
