@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -48,8 +49,10 @@ func buildRouter() *mux.Router {
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	payload := struct {
 		Status string `json:"status"`
+		Time   string `json:"time"`
 	}{
 		Status: "ok",
+		Time:   time.Now().Format(time.RFC3339),
 	}
 
 	responseJSONHandle(w, http.StatusOK, payload)

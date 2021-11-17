@@ -1,10 +1,8 @@
-PROJECTNAME="url-shortener"
+PROJECTNAME=url-shortener
 GO=go
 GO_TEST=$(GO) test -race -failfast ./handler ./model ./repo
 GO_COVER=$(GO) tool cover
 GO_BUILD=CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -trimpath -ldflags "-s -w"
-
-LDFLAGS=-ldflags "-s -w"
 
 clean:
 	rm -rf .serverless ./bin

@@ -5,6 +5,7 @@
 /api
 /main
 /node_modules
+/.serverless/
 
 # Unit test / coverage reports
 /coverage.html

@@ -1,6 +1,6 @@
 service: urlshortener
 
-frameworkVersion: '>=1.28.0 <2.0.0'
+frameworkVersion: '>=2.0.0 <3.0.0'
 
 custom:
     dynamoTable: url-shortener-${self:provider.stage}
@@ -10,6 +10,7 @@ provider:
     runtime: go1.x
     stage: prod
     region: ap-southeast-2
+    lambdaHashingVersion: 20201221
     memorySize: 128
     timeout: 10
     iamManagedPolicies:
@@ -46,7 +47,7 @@ functions:
             DYNAMO_DB_TABLE: ${self:custom.dynamoTable}
         events:
             - http: ANY /
-            - http: ANY {proxy+}
+            - http: ANY /{proxy+}
 
 resources:
     Resources:
