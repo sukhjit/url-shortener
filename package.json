@@ -1,8 +1,8 @@
 {
   "name": "url-shortener",
   "description": "Url Shortener deployed with serverless using AWS Lambda",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "devDependencies": {
-    "serverless": "^2.0"
+    "serverless": "^3.2.1"
   }
 }
