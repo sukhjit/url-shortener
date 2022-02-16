@@ -15,7 +15,7 @@ import (
 	"github.com/sukhjit/url-shortener/repo"
 	"github.com/sukhjit/url-shortener/repo/dynamodb"
 	"github.com/sukhjit/url-shortener/repo/inmemory"
-	"github.com/sukhjit/util"
+	"github.com/sukhjit/util/pkg/stringz"
 )
 
 var (
@@ -121,7 +121,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	obj := &model.Shortener{
-		Slug: util.RandomString(8),
+		Slug: stringz.RandomString(8),
 		URL:  parsedURL.String(),
 	}
 

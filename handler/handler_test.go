@@ -50,7 +50,8 @@ func TestStatusHandler(t *testing.T) {
 	b, err := io.ReadAll(res.Body)
 	a.Nil(err)
 
-	a.Equal(`{"status":"ok"}`, string(b))
+	a.Contains(string(b), `"status":"ok"`)
+	a.Contains(string(b), `"time":`)
 }
 
 func TestAddHandlerWithInvalidPayload(t *testing.T) {
