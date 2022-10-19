@@ -7,9 +7,21 @@
 /node_modules
 /.serverless/
 
-# Unit test / coverage reports
-/coverage.html
-/c.out
+# Mac
+.DS_Store
 
 # IDE
-.vscode/
+.idea
+.vscode
+
+# ENV
+.env
+*_rsa
+
+# Terraform
+*.tfstate*
+.terraform
+
+# Golang
+dist/
+vendor/

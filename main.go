@@ -54,7 +54,7 @@ func main() {
 	if isLocal {
 		fmt.Println("Started local server on port:", port)
 
-		log.Fatal(http.ListenAndServe(":"+port, router))
+		log.Fatal(http.ListenAndServe(":"+port, router)) // nolint: gosec
 	} else {
 		lambda.Start(lambdaHandler)
 	}
