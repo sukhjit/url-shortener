@@ -20,7 +20,7 @@ lint: lint-install
 	@$(LINTER) run -v ./...
 
 build:
-	$(GO_BUILD) -o bin/url-shortener main.go
+	$(GO_BUILD) -o bootstrap main.go
 
 test:
 	@mkdir -p $(TEST_DIR)
