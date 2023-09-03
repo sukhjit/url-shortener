@@ -3,8 +3,7 @@
 set -euo pipefail
 
 if ! which npm > /dev/null 2>&1; then
-    curl -fsSL https://deb.nodesource.com/setup_16.x | bash
-    apt-get update && apt-get install -y nodejs
+    apt-get update && apt-get install -y nodejs npm
 fi
 
 echo ""

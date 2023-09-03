@@ -20,7 +20,7 @@ lint: lint-install
 	@$(LINTER) run -v ./...
 
 build:
-	$(GO_BUILD) -o bin/url-shortener main.go
+	$(GO_BUILD) -o bootstrap main.go
 
 test:
 	@mkdir -p $(TEST_DIR)
@@ -35,4 +35,5 @@ test:
 	@go tool cover -html=$(TEST_DIR)/c.out -o $(TEST_DIR)/c.html
 
 deploy: clean build
+	npm install
 	./node_modules/.bin/sls deploy --verbose
