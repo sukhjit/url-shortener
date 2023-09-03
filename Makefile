@@ -35,4 +35,5 @@ test:
 	@go tool cover -html=$(TEST_DIR)/c.out -o $(TEST_DIR)/c.html
 
 deploy: clean build
+	npm install
 	./node_modules/.bin/sls deploy --verbose
