@@ -51,17 +51,20 @@ func main() {
 
 	router = handler.NewHandler(isLocal, awsRegion, dynamoDBTable)
 
-	if isLocal {
-		fmt.Println("Started local server on port:", port)
-
-		log.Fatal(http.ListenAndServe(":"+port, router)) // nolint: gosec
-	} else {
+	if !isLocal {
 		lambda.Start(lambdaHandler)
+		return
 	}
+
+	fmt.Println("Started local server on port:", port)
+	log.Fatal(http.ListenAndServe(":"+port, router)) // nolint: gosec
 }
 
 // nolint: gocritic
-func lambdaHandler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func lambdaHandler(
+	_ context.Context,
+	req events.APIGatewayProxyRequest,
+) (events.APIGatewayProxyResponse, error) {
 	if muxLambdaSvc == nil {
 		muxLambdaSvc = muxAdapter.New(router)
 	}

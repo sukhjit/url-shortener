@@ -46,7 +46,7 @@ func buildRouter() *mux.Router {
 	return router
 }
 
-func statusHandler(w http.ResponseWriter, r *http.Request) {
+func statusHandler(w http.ResponseWriter, _ *http.Request) {
 	payload := struct {
 		Status string `json:"status"`
 		Time   string `json:"time"`

@@ -39,11 +39,10 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
+    - copyloopvar
     - dogsled
     - dupl
     - errcheck
-    - exportloopref
     - funlen
     - gochecknoinits
     - goconst
@@ -74,7 +73,6 @@ issues:
         - gomnd
 
 run:
-  go: "1.21"
-  deadline: 5m
+  timeout: 5m
   skip-dirs:
     - node_modules

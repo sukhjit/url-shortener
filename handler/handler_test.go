@@ -16,15 +16,15 @@ import (
 
 type MockDB struct{}
 
-func (m *MockDB) Load(slug string) (string, error) {
+func (m *MockDB) Load(_ string) (string, error) {
 	return "", fmt.Errorf("failed to load")
 }
 
-func (m *MockDB) Add(item *model.Shortener) error {
+func (m *MockDB) Add(_ *model.Shortener) error {
 	return fmt.Errorf("failed to add")
 }
 
-func (m *MockDB) Info(slug string) (*model.Shortener, error) {
+func (m *MockDB) Info(_ string) (*model.Shortener, error) {
 	return nil, fmt.Errorf("failed to info")
 }
 
